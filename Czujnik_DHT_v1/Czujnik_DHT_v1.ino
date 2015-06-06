@@ -10,6 +10,11 @@
 #define DHTTYPE DHT22   // DHT 22  (AM2302)
 #define rfTransmitPin 4
 #define ledPin 13
+DHT dht(DHTPIN, DHTTYPE);
+
+//Zmienne:
+
+char *controller;
 
 
 
@@ -17,33 +22,37 @@
 void setup() {
   Serial.begin(9600); 
   // Dht:
-  DHT dht(DHTPIN, DHTTYPE);
+  
   dht.begin();
   
   
   //Rfid:
-   pinMode(rfTransmitPin, OUTPUT);     
-   pinMode(ledPin, OUTPUT);    
+vw_set_ptt_inverted(true); //
+vw_set_tx_pin(12);
+vw_setup(4000);// speed of data transfer Kbps
+
 }
 
 void loop() {
   
   //Rfid:
   
-  for(int i=4000; i>5; i=i-(i/3)){
-     digitalWrite(rfTransmitPin, HIGH);     //Transmit a HIGH signal
-     digitalWrite(ledPin, HIGH);            //Turn the LED on
-     delay(2000);                           //Wait for 1 second
-     
-     digitalWrite(rfTransmitPin,LOW);      //Transmit a LOW signal
-     digitalWrite(ledPin, LOW);            //Turn the LED off
-     delay(i);                            //Variable delay
-   }
+ controller="1"  ;
  
+vw_send((uint8_t *)controller, strlen(controller));
+vw_wait_tx(); // Wait until the whole message is gone
+digitalWrite(13,1);
+delay(2000);
+controller="0"  ;
+vw_send((uint8_t *)controller, strlen(controller));
+vw_wait_tx(); // Wait until the whole message is gone
+digitalWrite(13,0);
+
  //DHT:
   // Wait a few seconds between measurements.
   delay(2000);
-  // Reading temperature or humidity takes about 250 milliseconds!
+  // Reading temperature or 
+  humidity takes about 250 milliseconds!
   // Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
   float h = dht.readHumidity();
   // Read temperature as Celsius
