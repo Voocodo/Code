@@ -3,6 +3,7 @@
 
 //Biblioteki:
 #include "DHT.h"
+#include <VirtualWire.h>
 
 //Piny:
 #define DHTPIN 2     // what pin we're connected to
