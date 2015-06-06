@@ -1,35 +1,24 @@
 // 25.04.2015 
 // 6.06.2015 Bezprzewodowy czujnik 433 MhZ
 
-
-
+//Biblioteki:
 #include "DHT.h"
 
+//Piny:
 #define DHTPIN 2     // what pin we're connected to
-
-
 #define DHTTYPE DHT22   // DHT 22  (AM2302)
-
-// Connect pin 1 (on the left) of the sensor to +5V
-// NOTE: If using a board with 3.3V logic like an Arduino Due connect pin 1
-// to 3.3V instead of 5V!
-// Connect pin 2 of the sensor to whatever your DHTPIN is
-// Connect pin 4 (on the right) of the sensor to GROUND
-// Connect a 10K resistor from pin 2 (data) to pin 1 (power) of the sensor
-// Initialize DHT sensor for normal 16mhz Arduino
-DHT dht(DHTPIN, DHTTYPE);
-
-// Example to initialize DHT sensor for Arduino Due:
-//DHT dht(DHTPIN, DHTTYPE, 30);
-
 #define rfTransmitPin 4
-#define ledPin 13   
+#define ledPin 13
+
+
+
 
 void setup() {
   Serial.begin(9600); 
-  Serial.println("DHTxx test!");
   // Dht:
+  DHT dht(DHTPIN, DHTTYPE);
   dht.begin();
+  
   
   //Rfid:
    pinMode(rfTransmitPin, OUTPUT);     
@@ -53,7 +42,6 @@ void loop() {
  //DHT:
   // Wait a few seconds between measurements.
   delay(2000);
-
   // Reading temperature or humidity takes about 250 milliseconds!
   // Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
   float h = dht.readHumidity();
@@ -80,7 +68,5 @@ void loop() {
   Serial.print(" *C ");
   Serial.print(f);
   Serial.print(" *F\t");
-  Serial.print("Heat index: ");
-  Serial.print(hi);
-  Serial.println(" *F");
+
 }
