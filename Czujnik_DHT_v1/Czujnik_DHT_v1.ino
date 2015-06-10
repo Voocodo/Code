@@ -26,30 +26,23 @@ byte count = 1;
 void setup() {
   Serial.begin(9600); 
   // Dht:
-  
   dht.begin();
   
-  
   //Rfid:
-vw_set_ptt_inverted(true); //
+vw_set_ptt_inverted(true);
 vw_set_tx_pin(transmit_pin);
 vw_set_ptt_pin(transmit_en_pin);
 vw_setup(2000);// speed of data transfer Kbps
-
 }
+
 
 void loop() {
   
-char msg[8]={'h','e','l','l','o','w','#',};
+char msg[8]={'s','i','e','m','a','0','0',};
 
  //DHT:
-  // Wait a few seconds between measurements.
   delay(2000);
-  // Reading temperature or 
-  //humidity takes about 250 milliseconds!
-  // Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
   float h = dht.readHumidity();
-  // Read temperature as Celsius
   float t = dht.readTemperature();
   // Read temperature as Fahrenheit
   float f = dht.readTemperature(true);
@@ -76,10 +69,9 @@ char msg[8]={'h','e','l','l','o','w','#',};
     //Rfid:
 msg[5]=t;  
 msg[6] = count;
-digitalWrite(13,1);
+digitalWrite(13,1); //Wysylanie wiadomosci
 vw_send((uint8_t *)msg,7);
 vw_wait_tx(); // Wait until the whole message is gone
 digitalWrite(13,0);
 count=count+1;
-
 }
