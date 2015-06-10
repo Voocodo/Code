@@ -1,20 +1,26 @@
+//Datalog:
 // 25.04.2015 
 // 6.06.2015 Bezprzewodowy czujnik 433 MhZ
 // 7.06 uruchamianie
+// 10.06 edycja GitHub
+
+
 
 //Biblioteki:
-#include "DHT.h"
+#include <DHT.h>
 #include <VirtualWire.h>
 
 //Piny:
 #define DHTPIN 2     // what pin we're connected to
 #define DHTTYPE DHT22   // DHT 22  (AM2302)
-
-
 #define transmit_pin  12
 #define transmit_en_pin 3
 #define ledPin 13
+
+//Inicjalizacja DHT:
 DHT dht(DHTPIN, DHTTYPE);
+
+//Zmienne:
 byte count = 1;
 
 void setup() {
