@@ -69,6 +69,14 @@ char msg[8]={'s','i','e','m','a','0','0',};
     //Rfid:
 msg[5]=t;  
 msg[6] = count;
+ Serial.print(msg[0]);
+Serial.print(msg[1]); 
+Serial.print(msg[2]); 
+Serial.print(msg[3]); 
+Serial.print(msg[4]); 
+Serial.print(msg[5]); 
+Serial.print(msg[6]); 
+
 digitalWrite(13,1); //Wysylanie wiadomosci
 vw_send((uint8_t *)msg,7);
 vw_wait_tx(); // Wait until the whole message is gone
