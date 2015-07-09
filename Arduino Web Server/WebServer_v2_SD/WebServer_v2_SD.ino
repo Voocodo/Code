@@ -144,14 +144,12 @@ void ProcessCheckbox(EthernetClient cl)
     if (ledStatus) {    // switch LED on
         digitalWrite(ledPin, HIGH);
         // checkbox is checked
-        cl.println("<input type=\"checkbox\" name=\"LED\" value=\"1\" \
-        onclick=\"submit();\" checked>LED2");
+        cl.println("<input type=\"checkbox\" name=\"LED\" value=\"1\" \onclick=\"submit();\" checked>LED2");
     }
     else {              // switch LED off
         digitalWrite(2, LOW);
         // checkbox is unchecked
-        cl.println("<input type=\"checkbox\" name=\"LED\" value=\"1\" \
-        onclick=\"submit();\">LED");
+        cl.println("<input type=\"checkbox\" name=\"LED\" value=\"1\" \  onclick=\"submit();\">LED");
     }
 }
 
