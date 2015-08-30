@@ -3,6 +3,7 @@
 // 6.06.2015 Bezprzewodowy czujnik 433 MhZ
 // 7.06 uruchamianie
 // 10.06 edycja GitHub
+// 30.08 testowanie
 
 
 
@@ -13,6 +14,8 @@
 //Piny:
 #define DHTPIN 2     // what pin we're connected to
 #define DHTTYPE DHT22   // DHT 22  (AM2302)
+
+
 #define transmit_pin  12
 #define transmit_en_pin 3
 #define ledPin 13
@@ -22,8 +25,10 @@ DHT dht(DHTPIN, DHTTYPE);
 
 //Zmienne:
 byte count = 1;
+int zmienna[3]; //Ilosc zmiennych do przeslania
 
 void setup() {
+  digitalWrite(13,0);
   Serial.begin(9600); 
   // Dht:
   dht.begin();
@@ -38,7 +43,7 @@ vw_setup(2000);// speed of data transfer Kbps
 
 void loop() {
   
-char msg[8]={'s','i','e','m','a','0','0',};
+//char msg[3]={'','',''};
 
  //DHT:
   delay(2000);
@@ -52,33 +57,32 @@ char msg[8]={'s','i','e','m','a','0','0',};
     Serial.println("Failed to read from DHT sensor!");
     return;
   }
-
-  // Compute heat index
-  // Must send in temp in Fahrenheit!
-  float hi = dht.computeHeatIndex(f, h);
-
+  
   Serial.print("Humidity: "); 
   Serial.print(h);
-  Serial.print(" %\t");
+  Serial.print(" % ");
   Serial.print("Temperature: "); 
   Serial.print(t);
-  Serial.print(" *C ");
-  Serial.print(f);
-  Serial.print(" *F\t");
+  Serial.println(" *C ");
+
   
-    //Rfid:
-msg[5]=t;  
-msg[6] = count;
- Serial.print(msg[0]);
-Serial.print(msg[1]); 
-Serial.print(msg[2]); 
-Serial.print(msg[3]); 
-Serial.print(msg[4]); 
-Serial.print(msg[5]); 
-Serial.print(msg[6]); 
+    //433 mhz:
+//msg[5] = 5;  
+//msg[6] = count;
+zmienna[0]=t*100;
+zmienna[1]=h*100;
+zmienna[2]=count;
+//Serial.print(msg[0]);
+//Serial.print(msg[1]); 
+//Serial.print(msg[2]); 
+//Serial.print(msg[3]); 
+//Serial.print(msg[4]); 
+//Serial.print(msg[5]); 
+//Serial.println(msg[6]); 
 
 digitalWrite(13,1); //Wysylanie wiadomosci
-vw_send((uint8_t *)msg,7);
+//vw_send((uint8_t *)msg,3);
+vw_send((uint8_t *)zmienna, sizeof(zmienna));
 vw_wait_tx(); // Wait until the whole message is gone
 digitalWrite(13,0);
 count=count+1;
