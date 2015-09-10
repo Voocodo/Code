@@ -1,10 +1,35 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <title>Arduino SD Card Web Page</title>
+	<meta charset="UTF-8">
+        <title>Strona pomiarowa</title>
+		<style>
+		body{
+		background:black;	
+		color:white;
+    font-family: Helvetica;
+	}
+	
+    p {
+    font-size: 20px;
+	color: yellow ;
+	text-align:center;
+	}
+
+		</style>
     </head>
     <body>
-        <h1>Hello from the Arduino SD Card!</h1>
+        <h1>System pomiarowy</h1>
         <p>A web page from the Arduino SD card server.</p>
+		<table>	
+		<tr>
+		<td><p>Temperatura:</p></td><td>temp</td>
+		</tr>
+		
+		<tr>
+		<td><p>Wilgotność:</p></td><td>wilg</td>
+		</tr>
+		
+		</table>
     </body>
 </html>

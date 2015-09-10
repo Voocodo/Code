@@ -1,10 +1,8 @@
 //30.08 testowanie
-//9.10.2015 proba zmieszania z sd
 
 #include <VirtualWire.h>
 #include <SPI.h>
 #include <Ethernet.h>
-#include <SD.h>
 
 const int led_pin = 6;
 //const int transmit_pin = 12;
@@ -12,6 +10,7 @@ const int receive_pin = 22;
 const int transmit_en_pin = 3;
 
 int zmienna[3];
+//int c;
 float temp =0;
 float wilg =0;
 char c;
@@ -30,10 +29,6 @@ EthernetServer server(80);
 
 
 ////////////////////////////
-//SD:
-File webFile;
-
-///
 
 
 void setup()
@@ -61,25 +56,6 @@ void setup()
   Serial.println(Ethernet.localIP());
   
   ////////////////////////////
-  //SD:
-   Serial.println("Initializing SD card...");
-    if (!SD.begin(4)) {
-        Serial.println("ERROR - SD card initialization failed!");
-        return;    // init failed
-    }
-    Serial.println("SUCCESS - SD card initialized.");
-    // check for index.htm file
-    if (!SD.exists("index.htm")) {
-        Serial.println("ERROR - Can't find index.htm file!");
-        return;  // can't find index file
-    }
-    Serial.println("SUCCESS - Found index.htm file.");
-  
-  
-  
-  
-  
-  //////////////////////////
 }
 
 void loop()
@@ -125,6 +101,11 @@ void loop()
     Serial.println(wilg);
     }
     
+
+    
+    delay(50);
+    
+    
     
     ////Wifi:////////
      // listen for incoming clients
@@ -141,8 +122,6 @@ void loop()
         // character) and the line is blank, the http request has ended,
         // so you can send a reply
         if (c == '\n' && currentLineIsBlank) {
-          
-          /////////////////////////////////////
           // send a standard http response header
           client.println("HTTP/1.1 200 OK");
           client.println("Content-Type: text/html");
@@ -152,17 +131,6 @@ void loop()
           client.println("<!DOCTYPE HTML>");
           client.println("<meta charset='ISO-8859-1'>");
           client.println("<html>");
-
-                    webFile = SD.open("index.htm");        // open web page file
-                    if (webFile) {
-                        while(webFile.available()) {
-                            client.write(webFile.read()); // send web page to client
-                        }
-                        webFile.close();
-                    }
-                    
-          
-          
           // output the value of each analog input pin
          // for (int analogChannel = 0; analogChannel < 6; analogChannel++) {
            // int sensorReading = analogRead(analogChannel);
@@ -193,7 +161,6 @@ void loop()
     client.stop();
     Serial.println("client disconnected");
   }
-    
   }
   ////////////////////
 
