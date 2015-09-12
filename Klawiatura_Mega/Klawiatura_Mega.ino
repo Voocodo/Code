@@ -56,6 +56,12 @@ unsigned long buzzer_time = 0;
 unsigned long aktualnyCzas =0;
 /////////////////////////////////////////////
 
+//Relay
+int relay1 = 52;
+int relay2 = 53;
+unsigned long relay1_time=0;
+unsigned long relay2_time=0;
+
 
 void enterPinMode() //Sprawdza poprawność kodu PIN
 {
@@ -72,8 +78,10 @@ void enterPinMode() //Sprawdza poprawność kodu PIN
        if (proba==4 && pozycja<4) //Jeśli kod PIN jest zły
    {
      lcd.clear();
-     lcd.write ("Zly kod PIN");
+     lcd.write ("Niepoprawny kod PIN!");
      enterPinModeActive=0;
+     lcdFadeTime=millis()+3000;
+     lcdFade=1;
    }
     
     
@@ -87,6 +95,8 @@ void enterPinMode() //Sprawdza poprawność kodu PIN
          lcd.clear();
          lcd.write("Alarm nieaktywny!");
          digitalWrite(buzzer,HIGH);
+         digitalWrite(relay1, LOW);
+         relay1_time=millis()+5000;
          buzzer_time=millis()+1000; // Włacza buzzer na sekundę oraz zostawia ekran na 3 sekundy
          lcdFadeTime=millis()+3000;
          lcdFade=1;
@@ -97,6 +107,7 @@ void enterPinMode() //Sprawdza poprawność kodu PIN
          lcd.clear();
          lcd.write("Alarm aktywny!"); 
          digitalWrite(buzzer,HIGH);
+         
          buzzer_time=millis()+1000; // Włacza buzzer na sekundę oraz zostawia ekran na 3 sekundy
          lcdFadeTime=millis()+3000;
          lcdFade=1;
@@ -113,7 +124,11 @@ void setup(){
   pinMode(redLed, OUTPUT);
   pinMode(greenLed, OUTPUT);
   pinMode(buzzer,OUTPUT);
+  pinMode(relay1, OUTPUT);
+  pinMode(relay2,OUTPUT);
   
+  digitalWrite(relay1, HIGH);
+  digitalWrite(relay2, HIGH);
   digitalWrite(redLed,HIGH);
   digitalWrite(greenLed,HIGH);
   digitalWrite(buzzer,LOW);
@@ -172,6 +187,32 @@ char customKey = customKeypad.getKey();
   enterPinModeActive=0;
    break;
    
+   case 'A':
+   if (enterPinModeActive==0 && statusUzbrojenia==0)
+   {
+     digitalWrite(relay1, LOW);
+     relay1_time=millis()+5000;
+   lcd.clear();
+   lcd.print("Drzwi otwarte!");
+   lcdFadeTime=millis()+3000;
+   lcdFade=1;
+   }   
+   break;
+   
+   case 'B':
+   if (enterPinModeActive==0 && statusUzbrojenia==0)
+   {
+     
+     digitalWrite(relay2, LOW);
+     relay2_time=millis()+5000;
+     lcd.clear();
+     lcd.print("Relay 2 aktywny!");
+     lcdFadeTime=millis()+3000;
+     lcdFade=1;
+     
+   }   
+   break;
+   
   }
 
   }
@@ -183,12 +224,31 @@ char customKey = customKeypad.getKey();
   digitalWrite(buzzer,LOW);  
   }
   
-  if (aktualnyCzas>=lcdFadeTime && lcdFade==1)
+   if (aktualnyCzas>=relay1_time)
+  {
+  digitalWrite(relay1,HIGH);  
+  }
+  
+    if (aktualnyCzas>=relay2_time)
+  {
+  digitalWrite(relay2,HIGH);  
+  }
+  
+  if (aktualnyCzas>=lcdFadeTime && lcdFade==1 && enterPinModeActive==0)
   {
   lcd.clear();
   lcd.print("Ekran startowy.");
   lcd.setCursor(5,1);
-  lcd.print("Witaj!"); 
+  lcd.print("Witaj!");
+ lcd.setCursor(0,2);
+ lcd.print("Status alarmu:");
+ lcd.setCursor(0,3);
+ if (statusUzbrojenia==1){
+ lcd.print("Uzbrojony");
+ }
+ else
+ lcd.print("Rozbrojony");
+ 
   lcdFade=0;
   }
 
