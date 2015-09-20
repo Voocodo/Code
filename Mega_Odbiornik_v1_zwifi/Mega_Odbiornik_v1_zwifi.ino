@@ -1,6 +1,7 @@
 //30.08 testowanie
-//9.10.2015 proba zmieszania z sd
-
+//9.09.2015 proba zmieszania z sd
+//19.09 logowanie na karte sd
+//20.09 dodanie cisnienia
 #include <VirtualWire.h>
 #include <SPI.h>
 #include <Ethernet.h>
@@ -11,9 +12,11 @@ const int led_pin = 6;
 const int receive_pin = 22;
 const int transmit_en_pin = 3;
 
-int zmienna[3];
+int zmienna[4];
 float temp =0;
 float wilg =0;
+float cisn =0;
+int count=0;
 char c;
 //Wifi:////////////////////
 
@@ -32,6 +35,9 @@ EthernetServer server(80);
 ////////////////////////////
 //SD:
 File webFile;
+File myFile;
+unsigned long datalog_time=0;
+int datalog_count =0;
 
 ///
 
@@ -74,6 +80,12 @@ void setup()
         return;  // can't find index file
     }
     Serial.println("SUCCESS - Found index.htm file.");
+    
+    if (!SD.exists("datalog.txt")) {
+        Serial.println("ERROR - Can't find datalog.txt file!");
+        return;  // can't find index file
+    }
+    Serial.println("SUCCESS - Found datalog.txt file.");
   
   
   
@@ -104,7 +116,7 @@ void loop()
      Serial.print("  ");
 	}
 
- for (int i = 0; i < 3; i++)
+ for (int i = 0; i < 5; i++)
    {
      zmienna[i] = word(buf[i*2+1], buf[i*2]);
      Serial.print("numbers[");
@@ -117,12 +129,38 @@ void loop()
         digitalWrite(led_pin, LOW);
             temp=zmienna[0];
     wilg=zmienna[1];
+    cisn=zmienna[2];
+    count=zmienna[3];
     temp=temp/100;
     wilg=wilg/100;
     Serial.print("Temp:");
     Serial.print(temp);
     Serial.print("Wilg:");
-    Serial.println(wilg);
+    Serial.print(wilg);
+     Serial.print("Cisn:");
+    Serial.println(cisn);
+     Serial.print("Cout:");
+    Serial.println(count);
+    //Zapisz temp do karty SD
+    
+     if (datalog_time < millis())
+       {
+      Serial.println("Logowanie do karty SD");
+      datalog_count = datalog_count+1;
+      myFile = SD.open("datalog.txt",FILE_WRITE);
+      myFile.print(datalog_count);
+      myFile.print(",");
+      myFile.print(millis()/1000);
+      myFile.print(",");
+      myFile.print(temp);
+      myFile.print(",");
+      myFile.print(wilg);
+       myFile.print(",");
+      myFile.println(cisn);
+      myFile.close();
+      datalog_time=millis()+60000; //Kolejny wpis za 60 sekund
+      }
+    
     }
     
     
@@ -167,14 +205,16 @@ void loop()
          // for (int analogChannel = 0; analogChannel < 6; analogChannel++) {
            // int sensorReading = analogRead(analogChannel);
            
-            client.print("Temperatura: ");
+            client.print("<td><p>Temperatura:</p></td><td>");
             client.println(temp);
-            client.println("<br />");
-            client.print("Wilgotność: ");
+            client.println("</td>");
+            client.print("</tr><tr><td><p>Wilgotnosc:</p></td><td>");
             client.println(wilg);
-            client.println("<br />");
-          
-          client.println("</html>");
+            client.println("</td></tr>");
+            client.println("<tr><td><p>Cisnienie:</p></td><td>");
+            client.println(cisn);
+            client.println("</td></tr></table></body></html>");
+
           break;
         }
         if (c == '\n') {
