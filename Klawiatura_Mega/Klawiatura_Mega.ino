@@ -7,6 +7,7 @@
 //------------------Libraries------------------//
 #include <Keypad.h>
 #include <LiquidCrystal.h>
+#include <Wire.h>
 //---------------------------------------------//
 
 
@@ -49,7 +50,7 @@ byte enterPinModeActive=0;
 char kodPin[4] = {'1','4','7','8'};
 int pozycja =0;
 int proba=0;
-byte statusUzbrojenia=1; // 1 - uzbrojony, 0-rozbrojony
+byte statusUzbrojenia=0; // 1 - uzbrojony, 0-rozbrojony
 
 //Buzzer
 unsigned long buzzer_time = 0;
@@ -61,6 +62,68 @@ int relay1 = 52;
 int relay2 = 53;
 unsigned long relay1_time=0;
 unsigned long relay2_time=0;
+
+//I2C
+int daneI2C [3];
+int licznikI2C = 0;
+int ileBitowI2C =0;
+byte lowBit = 0;
+byte highBit = 0;
+int iI2C =0;
+unsigned long i2c_time=0;
+#define SLAVE_ADDRESS 0x60
+float temp =0;
+float wilg =0;
+int cisn =0;
+
+void czytajI2C()
+{
+    Wire.requestFrom(SLAVE_ADDRESS, 6);
+  ileBitowI2C=Wire.available();
+  Serial.print("Ilosc bitow I2C:");
+  Serial.println(ileBitowI2C);
+  for (iI2C =0;iI2C<ileBitowI2C; iI2C++)
+  {
+    
+    
+  if (iI2C%2==0 || iI2C==0) //For pair bytes and 0:
+    {
+      lowBit=Wire.read(); 
+    //  Serial.print("lowBit:");
+  //    Serial.println(lowBit);
+    }
+    
+    else if (iI2C%2==1) //For unpair bytes
+    {
+    highBit=Wire.read();
+    //Serial.print("highBit:");
+    //Serial.println(highBit);
+    daneI2C[licznikI2C]=lowBit+highBit*256;
+    //Serial.print("Dane[");
+    //Serial.print(licznikI2C);
+    //Serial.print("]:");
+    //Serial.println(daneI2C[licznikI2C]);
+    licznikI2C=licznikI2C+1;
+    }
+  }
+  licznikI2C=0;
+//  temp=daneI2C[1]/100;
+//  wilg=daneI2C[2]/100;
+  temp=daneI2C[1];
+  wilg=daneI2C[2];
+  temp=temp/100;
+  wilg=wilg/100;
+  cisn=daneI2C[0];
+  Serial.println("---------------------------------------------------");
+  Serial.print("Temperatura:");
+  Serial.println(temp);
+  Serial.print("Wilgotnosc:");
+  Serial.println(wilg);
+  Serial.print("Cisnienie:");
+  Serial.println(cisn);
+  Serial.println("---------------------------------------------------");
+  
+}
 
 
 void enterPinMode() //Sprawdza poprawność kodu PIN
@@ -119,6 +182,7 @@ void enterPinMode() //Sprawdza poprawność kodu PIN
 
 void setup(){
   Serial.begin(9600);
+  Wire.begin(); //Inicjalizacja I2C
   lcd.begin(20, 4);
   
   pinMode(redLed, OUTPUT);
@@ -213,6 +277,26 @@ char customKey = customKeypad.getKey();
    }   
    break;
    
+   case 'C':
+   if (enterPinModeActive==0 && statusUzbrojenia==0)
+   {
+
+     lcd.clear();
+     lcd.print("Temp: ");
+     lcd.print(temp);
+     lcd.setCursor(0,1);
+     lcd.print("Wilg: ");
+     lcd.print(wilg);
+      lcd.setCursor(0,2);
+      lcd.print("Cisn: ");
+     lcd.print(cisn);
+     
+     lcdFadeTime=millis()+3000;
+     lcdFade=1;
+     
+   }   
+   break;
+   
   }
 
   }
@@ -251,6 +335,16 @@ char customKey = customKeypad.getKey();
  
   lcdFade=0;
   }
+  
+    if (aktualnyCzas>=i2c_time)
+  {  
+  //Odczytanie informacji z I2C:
+   czytajI2C(); 
+     i2c_time=millis()+500;
+  }
+  
+
+  
 
 }
 

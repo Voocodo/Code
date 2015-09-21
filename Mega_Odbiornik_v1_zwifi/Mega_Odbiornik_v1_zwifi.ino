@@ -2,15 +2,26 @@
 //9.09.2015 proba zmieszania z sd
 //19.09 logowanie na karte sd
 //20.09 dodanie cisnienia
+//21.09 Dodanie I2C
+
+
 #include <VirtualWire.h>
 #include <SPI.h>
 #include <Ethernet.h>
 #include <SD.h>
+#include <Wire.h>
 
 const int led_pin = 6;
 //const int transmit_pin = 12;
 const int receive_pin = 22;
 const int transmit_en_pin = 3;
+
+
+//I2C:
+#define SLAVE_ADDRESS 0x60
+byte daneI2C[6];
+
+
 
 int zmienna[4];
 float temp =0;
@@ -45,6 +56,11 @@ int datalog_count =0;
 void setup()
 {
     Serial.begin(9600);	// Debugging only
+    //I2C:
+    Wire.begin(SLAVE_ADDRESS);
+  Wire.onReceive(receiveEvent);
+  Wire.onRequest(requestEvent);
+  
     Serial.println("setup");
     pinMode(13,OUTPUT);
     pinMode(receive_pin,INPUT);
@@ -127,7 +143,7 @@ void loop()
    }
 	Serial.println();
         digitalWrite(led_pin, LOW);
-            temp=zmienna[0];
+    temp=zmienna[0];
     wilg=zmienna[1];
     cisn=zmienna[2];
     count=zmienna[3];
@@ -141,6 +157,16 @@ void loop()
     Serial.println(cisn);
      Serial.print("Cout:");
     Serial.println(count);
+    
+    //I2C:
+  daneI2C[0]=lowByte(zmienna[2]);
+  daneI2C[1]=highByte(zmienna[2]);
+  daneI2C[2]=lowByte(zmienna[0]);
+  daneI2C[3]=highByte(zmienna[0]);
+  daneI2C[4]=lowByte(zmienna[1]);
+  daneI2C[5]=highByte(zmienna[1]);
+    
+    
     //Zapisz temp do karty SD
     
      if (datalog_time < millis())
@@ -236,5 +262,23 @@ void loop()
     
   }
   ////////////////////
+//I2c:
 
+void requestEvent() 
+{
+  Serial.println("Request from Master. Sending.");
+  Wire.write(daneI2C,6);
+}
 
+void receiveEvent(int bytes)
+{
+  if(Wire.available() != 0)
+  {
+    for(int i = 0; i< bytes; i++)
+    {
+      int x = Wire.read();
+      Serial.print("Status alarmu: ");
+      Serial.println(x, HEX);
+    }
+  }
+}
