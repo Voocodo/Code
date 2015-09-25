@@ -3,6 +3,7 @@
 //19.09 logowanie na karte sd
 //20.09 dodanie cisnienia
 //21.09 Dodanie I2C
+//25.09. RTC
 
 
 #include <VirtualWire.h>
@@ -10,9 +11,11 @@
 #include <Ethernet.h>
 #include <SD.h>
 #include <Wire.h>
+//RTC:
+#include <virtuabotixRTC.h>       
+virtuabotixRTC myRTC(5, 6, 7);
 
-const int led_pin = 6;
-//const int transmit_pin = 12;
+const int led_pin = 8;
 const int receive_pin = 22;
 const int transmit_en_pin = 3;
 
@@ -20,7 +23,6 @@ const int transmit_en_pin = 3;
 //I2C:
 #define SLAVE_ADDRESS 0x60
 byte daneI2C[6];
-
 
 
 int zmienna[4];
@@ -31,25 +33,19 @@ int count=0;
 char c;
 //Wifi:////////////////////
 
-byte mac[] = {
-  0xDE, 0xAD, 0xCE, 0xEF, 0xFE, 0xED
-};
+byte mac[] = {0xDE, 0xAD, 0xCE, 0xEF, 0xFE, 0xED};
 IPAddress ip(192, 168, 88, 88);
 
 // Initialize the Ethernet server library
 // with the IP address and port you want to use
 // (port 80 is default for HTTP):
 EthernetServer server(80);
-
-
-
 ////////////////////////////
 //SD:
 File webFile;
 File myFile;
 unsigned long datalog_time=0;
 int datalog_count =0;
-
 ///
 
 
@@ -58,10 +54,9 @@ void setup()
     Serial.begin(9600);	// Debugging only
     //I2C:
     Wire.begin(SLAVE_ADDRESS);
-  Wire.onReceive(receiveEvent);
-  Wire.onRequest(requestEvent);
+    Wire.onReceive(receiveEvent);
+    Wire.onRequest(requestEvent);
   
-    Serial.println("setup");
     pinMode(13,OUTPUT);
     pinMode(receive_pin,INPUT);
   
@@ -104,14 +99,34 @@ void setup()
     Serial.println("SUCCESS - Found datalog.txt file.");
   
   
+  //RTC:
   
-  
+//myRTC.setDS1302Time(00, 10, 13, 5, 25, 9, 2015);
   
   //////////////////////////
 }
 
 void loop()
 {
+//int h =hour();
+myRTC.updateTime();     
+//
+//  Serial.print("Current Date / Time: ");                                                                 //| 
+//  Serial.print(myRTC.dayofmonth);                                                                        //| 
+//  Serial.print("/");                                                                                     //| 
+//  Serial.print(myRTC.month);                                                                             //| 
+//  Serial.print("/");                                                                                     //| 
+//  Serial.print(myRTC.year);                                                                              //| 
+//  Serial.print("  ");                                                                                    //| 
+//  Serial.print(myRTC.hours);                                                                             //| 
+//  Serial.print(":");                                                                                     //| 
+//  Serial.print(myRTC.minutes);                                                                           //| 
+//  Serial.print(":");                                                                                     //| 
+//  Serial.println(myRTC.seconds); 
+
+
+//Serial.print("*********************");
+//erial.println(hour());  
     uint8_t buf[VW_MAX_MESSAGE_LEN];
     uint8_t buflen = VW_MAX_MESSAGE_LEN;
 
@@ -176,6 +191,19 @@ void loop()
       myFile = SD.open("datalog.txt",FILE_WRITE);
       myFile.print(datalog_count);
       myFile.print(",");
+      myFile.print(myRTC.dayofmonth);                                                                        //| 
+      myFile.print("/");                                                                                     //| 
+      myFile.print(myRTC.month);                                                                             //| 
+      myFile.print("/");                                                                                     //| 
+      myFile.print(myRTC.year);                                                                              //| 
+      myFile.print(",");
+      
+      myFile.print(myRTC.hours);                                                                             //| 
+    myFile.print(":");                                                                                     //| 
+     myFile.print(myRTC.minutes);                                                                           //| 
+    myFile.print(":");                                                                                     //| 
+    myFile.print(myRTC.seconds); 
+            myFile.print(",");
       myFile.print(millis()/1000);
       myFile.print(",");
       myFile.print(temp);
@@ -184,7 +212,7 @@ void loop()
        myFile.print(",");
       myFile.println(cisn);
       myFile.close();
-      datalog_time=millis()+60000; //Kolejny wpis za 60 sekund
+      datalog_time=millis()+10000; //Kolejny wpis za 10 sekund
       }
     
     }
