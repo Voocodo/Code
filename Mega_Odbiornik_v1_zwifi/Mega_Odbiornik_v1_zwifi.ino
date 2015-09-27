@@ -24,6 +24,7 @@ const int transmit_en_pin = 3;
 #define SLAVE_ADDRESS 0x60
 byte daneI2C[6];
 byte alarmInfo=0;
+byte receiveFlag=0;
 
 int zmienna[4];
 float temp =0;
@@ -48,7 +49,7 @@ File alarmFile;
 
 unsigned long datalog_time=0;
 int datalog_count =0;
-///
+
 
 
 void setup()
@@ -56,7 +57,7 @@ void setup()
     Serial.begin(9600);	// Debugging only
     //I2C:
     Wire.begin(SLAVE_ADDRESS);
-   // Wire.onReceive(receiveEvent);
+    Wire.onReceive(receiveEvent);
     Wire.onRequest(requestEvent);
   
     pinMode(13,OUTPUT);
@@ -68,7 +69,6 @@ void setup()
     vw_set_ptt_pin(transmit_en_pin);
     vw_set_ptt_inverted(true); // Required for DR3100
     vw_setup(2000);	 // Bits per sec
-
     vw_rx_start();       // Start the receiver PLL running
     
     ////Wifi://////////////
@@ -102,10 +102,9 @@ void setup()
   
   
   //RTC:
+  //myRTC.setDS1302Time(00, 10, 13, 5, 25, 9, 2015);
   
-//myRTC.setDS1302Time(00, 10, 13, 5, 25, 9, 2015);
-  
-  //////////////////////////
+
 }
 
 void loop()
@@ -113,14 +112,7 @@ void loop()
 
 {
 
-
-//alarmFile = SD.open("alarm.txt",FILE_WRITE);
-//Serial.print(alarmFile);
-//alarmFile.println("Door opened!");
-//alarmFile.close();
-//int h =hour();
 myRTC.updateTime();     
-//
 //  Serial.print("Current Date / Time: ");                                                                 //| 
 //  Serial.print(myRTC.dayofmonth);                                                                        //| 
 //  Serial.print("/");                                                                                     //| 
@@ -135,53 +127,54 @@ myRTC.updateTime();
 //  Serial.println(myRTC.seconds); 
 
 
-//Serial.print("*********************");
-//erial.println(hour());  
+//433 MHZ:
     uint8_t buf[VW_MAX_MESSAGE_LEN];
     uint8_t buflen = VW_MAX_MESSAGE_LEN;
 
     if (vw_get_message(buf, &buflen)) // Non-blocking
     {
-	int i;
+	//int i;
 
         digitalWrite(led_pin, HIGH); // Flash a light to show received good message
 	// Message with a good checksum received, print it.
-	Serial.print("Got: ");
+	//Serial.print("Got: ");
 	
-	for (i = 0; i < buflen; i++)
-	{
-     Serial.print("buf[");
-     Serial.print(i, DEC);
-     Serial.print("]=");
-     Serial.print(buf[i], DEC);
-     Serial.print("  ");
-	}
+//	for (i = 0; i < buflen; i++)
+//	{
+//     Serial.print("buf[");
+//     Serial.print(i, DEC);
+//     Serial.print("]=");
+//     Serial.print(buf[i], DEC);
+//     Serial.print("  ");
+//	}
 
  for (int i = 0; i < 5; i++)
    {
      zmienna[i] = word(buf[i*2+1], buf[i*2]);
-     Serial.print("numbers[");
-     Serial.print(i, DEC);
-     Serial.print("]=");
-     Serial.print(zmienna[i], DEC);
-     Serial.print("  ");
+//     Serial.print("numbers[");
+//     Serial.print(i, DEC);
+//     Serial.print("]=");
+//     Serial.print(zmienna[i], DEC);
+//     Serial.print("  ");
    }
-	Serial.println();
-        digitalWrite(led_pin, LOW);
+    Serial.println();
+    digitalWrite(led_pin, LOW);
     temp=zmienna[0];
     wilg=zmienna[1];
     cisn=zmienna[2];
     count=zmienna[3];
     temp=temp/100;
     wilg=wilg/100;
-    Serial.print("Temp:");
-    Serial.print(temp);
-    Serial.print("Wilg:");
-    Serial.print(wilg);
-     Serial.print("Cisn:");
+    Serial.println("---------------------------------"); 
+    Serial.print("Temperatura: ");
+    Serial.println(temp);
+    Serial.print("Wilgotnosc: ");
+    Serial.println(wilg);
+    Serial.print("Cisnienie: ");
     Serial.println(cisn);
-     Serial.print("Cout:");
+    Serial.print("Cout:");
     Serial.println(count);
+    Serial.println("---------------------------------"); 
     
     //I2C:
   daneI2C[0]=lowByte(zmienna[2]);
@@ -209,17 +202,18 @@ myRTC.updateTime();
       myFile.print(",");
       
       myFile.print(myRTC.hours);                                                                             //| 
-    myFile.print(":");                                                                                     //| 
-     myFile.print(myRTC.minutes);                                                                           //| 
-    myFile.print(":");                                                                                     //| 
-    myFile.print(myRTC.seconds); 
-            myFile.print(",");
+      myFile.print(":");                                                                                     //| 
+      myFile.print(myRTC.minutes);                                                                           //| 
+      myFile.print(":");                                                                                     //| 
+      myFile.print(myRTC.seconds);
+      
+      myFile.print(",");
       myFile.print(millis()/1000);
       myFile.print(",");
       myFile.print(temp);
       myFile.print(",");
       myFile.print(wilg);
-       myFile.print(",");
+      myFile.print(",");
       myFile.println(cisn);
       myFile.close();
       datalog_time=millis()+10000; //Kolejny wpis za 10 sekund
@@ -297,10 +291,81 @@ myRTC.updateTime();
     client.stop();
     Serial.println("client disconnected");
   }
+  
+  
+  //I2C receive
+  
+  if (receiveFlag==1) // If there is new event:
+  {
+    
+      alarmFile = SD.open("alarm.txt",FILE_WRITE); //Save time on SD file...
+      
+      alarmFile.println("");
+      alarmFile.print(myRTC.dayofmonth);                                                                        //| 
+      alarmFile.print("/");                                                                                     //| 
+      alarmFile.print(myRTC.month);                                                                             //| 
+      alarmFile.print("/");                                                                                     //| 
+      alarmFile.print(myRTC.year);                                                                              //| 
+      alarmFile.print(",");
+      alarmFile.print(myRTC.hours);                                                                             //| 
+      alarmFile.print(":");                                                                                     //| 
+      alarmFile.print(myRTC.minutes);                                                                           //| 
+      alarmFile.print(":");                                                                                     //| 
+      alarmFile.print(myRTC.seconds); 
+      alarmFile.print(",");
+      alarmFile.print(alarmInfo);
+      alarmFile.print(",     ");
+      
+      
+       if (alarmInfo==0) // Save event type on sd file
+      { 
+         
+        alarmFile.print("Wrong PIN");
+       // alarmFile.print(",");
+      }
+      
+      if (alarmInfo==1)
+      { 
+          
+        alarmFile.print("Correct PIN. Alarm deactivated.");
+     //   alarmFile.print(",");
+      }
+      
+       if (alarmInfo==2)
+      {    
+        alarmFile.print("Correct PIN. Alarm activated.");
+       // alarmFile.print(",");
+      }
+     
+      if (alarmInfo==7)
+      {
+        
+        alarmFile.print("Motion in room 1 detected!");
+       // alarmFile.print(",");
+      }
+     
+      if (alarmInfo==18)
+      {
+        
+        alarmFile.print("Door opened!");
+       // alarmFile.print(",");
+      }
+      
+     // alarmFile.print("Event code: ");
+      
+      
+      alarmFile.close();
+    
+
+  Serial.print("alarmInfo: ");
+  Serial.println(alarmInfo);
+  receiveFlag=0;       // Ready to receive another event.
+  }
+  
     
   }
-  ////////////////////
-//I2c:
+
+// I2C handling:
 
 void requestEvent() 
 {
@@ -308,62 +373,12 @@ void requestEvent()
   Wire.write(daneI2C,6);
 }
 
-//void receiveEvent(int bytes)
-//{
-//  if(Wire.available() != 0)
-//  {
-//    for(int i = 0; i< bytes; i++)
-//    {
-//      alarmInfo = Wire.read();
-//      Serial.print("Status alarmu: ");
-//      Serial.println(alarmInfo);
-//      
-//      alarmFile = SD.open("alarm.txt",FILE_WRITE);
-//      alarmFile.print(myRTC.dayofmonth);                                                                        //| 
-//      alarmFile.print("/");                                                                                     //| 
-//      alarmFile.print(myRTC.month);                                                                             //| 
-//      alarmFile.print("/");                                                                                     //| 
-//      alarmFile.print(myRTC.year);                                                                              //| 
-//      alarmFile.print(",");
-//      alarmFile.print(myRTC.hours);                                                                             //| 
-//      alarmFile.print(":");                                                                                     //| 
-//      alarmFile.print(myRTC.minutes);                                                                           //| 
-//      alarmFile.print(":");                                                                                     //| 
-//      alarmFile.print(myRTC.seconds); 
-//      alarmFile.print(",");
-//      alarmFile.print("        ");
-//            
-//            
-//            
-//   switch (alarmInfo) {
-//   case 0: 
-//   alarmFile.println("PIN 0");
-//   Serial.print ("PIN 0");
-//   break;
-//   
-//   case 1: 
-//   alarmFile.println("Door opened!");
-//   Serial.print ("PIN 1");
-//   break;
-//   
-//   case 2: 
-//   alarmFile.println("Door opened!");
-//   Serial.print ("PIN 2");
-//   break;
-//     
-//     case 18: 
-//   alarmFile.println("Door opened!");
-//   Serial.print ("Dooooooooooor!!!!!!");
-//   break;
-//   
-//   default:
-//   alarmFile.print(alarmInfo);
-//   alarmFile.println(" pin activated!");
-//   
-//            }
-//            alarmFile.close();
-//            
-//            
-//    }
-//  }
-//}
+void receiveEvent(int bytes)
+{
+   if(Wire.available() != 0)
+   {
+   alarmInfo=Wire.read();
+   receiveFlag=1;
+   }
+}
+

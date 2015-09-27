@@ -69,6 +69,10 @@ unsigned long relay2_time=0;
 int magnetPin = 18; //for interrupt
 boolean firstTime=0;
 
+//PIR:
+int pirSensor=7;
+unsigned long pirSensor_time =0;
+
 //I2C
 int daneI2C [3];
 int licznikI2C = 0;
@@ -86,8 +90,8 @@ void czytajI2C()
 {
     Wire.requestFrom(SLAVE_ADDRESS, 6);
   ileBitowI2C=Wire.available();
-  Serial.print("Ilosc bitow I2C:");
-  Serial.println(ileBitowI2C);
+//  Serial.print("Ilosc bitow I2C:");
+//  Serial.println(ileBitowI2C);
   for (iI2C =0;iI2C<ileBitowI2C; iI2C++)
   {
     
@@ -174,7 +178,7 @@ void enterPinMode() //Sprawdza poprawność kodu PIN
          lcdFadeTime=millis()+3000;
          lcdFade=1;
          
-         Wire.beginTransmission(0x60);   
+  Wire.beginTransmission(0x60);   
   Wire.write(1);                
   Wire.endTransmission();
        }
@@ -189,7 +193,7 @@ void enterPinMode() //Sprawdza poprawność kodu PIN
          lcdFadeTime=millis()+3000;
          lcdFade=1;
          
-         Wire.beginTransmission(0x60);   
+  Wire.beginTransmission(0x60);   
   Wire.write(2);                
   Wire.endTransmission();
          
@@ -211,6 +215,8 @@ void setup(){
   pinMode(relay2,OUTPUT);
   
   pinMode(magnetPin,INPUT);
+  pinMode(pirSensor,INPUT);
+  
   
   
   digitalWrite(relay1, HIGH);
@@ -235,7 +241,7 @@ if (digitalRead(magnetPin)==0 && firstTime==1 ) //Jesli drzwi zostaly otwarte
   }
                          // Niezaleznie od stanu, wyslij do plytki 2 i zapisz na karcie SD:
  //+ logowanie do karty SD
-   Serial.println("Information sent to module 2!"); 
+  Serial.println("Information sent to module 2!"); 
   Wire.beginTransmission(0x60);   
   Wire.write(magnetPin);                
   Wire.endTransmission();
@@ -247,6 +253,30 @@ if (digitalRead(magnetPin)==1)
  firstTime=1; 
  //Serial.println("Magnet dezactivated!"); 
 }
+
+  
+  //Sensor PIR:
+  
+  if (digitalRead(pirSensor)==1 && aktualnyCzas>=pirSensor_time) //Jesli drzwi zostaly otwarte 
+{
+ Serial.println("Motion detected!");
+  if (statusUzbrojenia==1) //W stanie uzbrojenia, wlaczAlarm:
+  {
+ digitalWrite(buzzer,HIGH);
+ Serial.println("Alarm activated!"); 
+ buzzer_time=millis()+1000;
+  }
+                         // Niezaleznie od stanu, wyslij do plytki 2 i zapisz na karcie SD:
+ //+ logowanie do karty SD
+  Serial.println("Information sent to module 2!"); 
+  Wire.beginTransmission(0x60);   
+  Wire.write(pirSensor);                
+  Wire.endTransmission();
+  
+  
+  pirSensor_time=millis()+1000;
+}
+
   
   
 // Sprawdza status alarmu i sygnalizuje go diodami:
@@ -388,7 +418,7 @@ char customKey = customKeypad.getKey();
   {  
   //Odczytanie informacji z I2C:
    czytajI2C(); 
-     i2c_time=millis()+500;
+     i2c_time=millis()+3000;
   }
   
 
