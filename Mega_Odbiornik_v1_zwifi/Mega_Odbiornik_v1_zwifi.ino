@@ -23,7 +23,7 @@ const int transmit_en_pin = 3;
 //I2C:
 #define SLAVE_ADDRESS 0x60
 byte daneI2C[6];
-
+byte alarmInfo=0;
 
 int zmienna[4];
 float temp =0;
@@ -44,6 +44,8 @@ EthernetServer server(80);
 //SD:
 File webFile;
 File myFile;
+File alarmFile;
+
 unsigned long datalog_time=0;
 int datalog_count =0;
 ///
@@ -54,7 +56,7 @@ void setup()
     Serial.begin(9600);	// Debugging only
     //I2C:
     Wire.begin(SLAVE_ADDRESS);
-    Wire.onReceive(receiveEvent);
+   // Wire.onReceive(receiveEvent);
     Wire.onRequest(requestEvent);
   
     pinMode(13,OUTPUT);
@@ -107,7 +109,15 @@ void setup()
 }
 
 void loop()
+
+
 {
+
+
+//alarmFile = SD.open("alarm.txt",FILE_WRITE);
+//Serial.print(alarmFile);
+//alarmFile.println("Door opened!");
+//alarmFile.close();
 //int h =hour();
 myRTC.updateTime();     
 //
@@ -298,15 +308,62 @@ void requestEvent()
   Wire.write(daneI2C,6);
 }
 
-void receiveEvent(int bytes)
-{
-  if(Wire.available() != 0)
-  {
-    for(int i = 0; i< bytes; i++)
-    {
-      int x = Wire.read();
-      Serial.print("Status alarmu: ");
-      Serial.println(x, HEX);
-    }
-  }
-}
+//void receiveEvent(int bytes)
+//{
+//  if(Wire.available() != 0)
+//  {
+//    for(int i = 0; i< bytes; i++)
+//    {
+//      alarmInfo = Wire.read();
+//      Serial.print("Status alarmu: ");
+//      Serial.println(alarmInfo);
+//      
+//      alarmFile = SD.open("alarm.txt",FILE_WRITE);
+//      alarmFile.print(myRTC.dayofmonth);                                                                        //| 
+//      alarmFile.print("/");                                                                                     //| 
+//      alarmFile.print(myRTC.month);                                                                             //| 
+//      alarmFile.print("/");                                                                                     //| 
+//      alarmFile.print(myRTC.year);                                                                              //| 
+//      alarmFile.print(",");
+//      alarmFile.print(myRTC.hours);                                                                             //| 
+//      alarmFile.print(":");                                                                                     //| 
+//      alarmFile.print(myRTC.minutes);                                                                           //| 
+//      alarmFile.print(":");                                                                                     //| 
+//      alarmFile.print(myRTC.seconds); 
+//      alarmFile.print(",");
+//      alarmFile.print("        ");
+//            
+//            
+//            
+//   switch (alarmInfo) {
+//   case 0: 
+//   alarmFile.println("PIN 0");
+//   Serial.print ("PIN 0");
+//   break;
+//   
+//   case 1: 
+//   alarmFile.println("Door opened!");
+//   Serial.print ("PIN 1");
+//   break;
+//   
+//   case 2: 
+//   alarmFile.println("Door opened!");
+//   Serial.print ("PIN 2");
+//   break;
+//     
+//     case 18: 
+//   alarmFile.println("Door opened!");
+//   Serial.print ("Dooooooooooor!!!!!!");
+//   break;
+//   
+//   default:
+//   alarmFile.print(alarmInfo);
+//   alarmFile.println(" pin activated!");
+//   
+//            }
+//            alarmFile.close();
+//            
+//            
+//    }
+//  }
+//}

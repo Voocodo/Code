@@ -2,6 +2,8 @@
 1.09.2015
 10.09.2015 leniwy start
 11.09.2015 kod pin dziala
+25.09 
+27.09 dodanie alarmu
 */
 
 //------------------Libraries------------------//
@@ -62,6 +64,10 @@ int relay1 = 52;
 int relay2 = 53;
 unsigned long relay1_time=0;
 unsigned long relay2_time=0;
+
+//Kontrakton
+int magnetPin = 18; //for interrupt
+boolean firstTime=0;
 
 //I2C
 int daneI2C [3];
@@ -145,6 +151,10 @@ void enterPinMode() //Sprawdza poprawność kodu PIN
      enterPinModeActive=0;
      lcdFadeTime=millis()+3000;
      lcdFade=1;
+     
+  Wire.beginTransmission(0x60);   
+  Wire.write(0);                
+  Wire.endTransmission();
    }
     
     
@@ -163,6 +173,10 @@ void enterPinMode() //Sprawdza poprawność kodu PIN
          buzzer_time=millis()+1000; // Włacza buzzer na sekundę oraz zostawia ekran na 3 sekundy
          lcdFadeTime=millis()+3000;
          lcdFade=1;
+         
+         Wire.beginTransmission(0x60);   
+  Wire.write(1);                
+  Wire.endTransmission();
        }
        
          if (statusUzbrojenia==1)
@@ -174,6 +188,11 @@ void enterPinMode() //Sprawdza poprawność kodu PIN
          buzzer_time=millis()+1000; // Włacza buzzer na sekundę oraz zostawia ekran na 3 sekundy
          lcdFadeTime=millis()+3000;
          lcdFade=1;
+         
+         Wire.beginTransmission(0x60);   
+  Wire.write(2);                
+  Wire.endTransmission();
+         
        }
   }
 }
@@ -191,6 +210,9 @@ void setup(){
   pinMode(relay1, OUTPUT);
   pinMode(relay2,OUTPUT);
   
+  pinMode(magnetPin,INPUT);
+  
+  
   digitalWrite(relay1, HIGH);
   digitalWrite(relay2, HIGH);
   digitalWrite(redLed,HIGH);
@@ -199,6 +221,33 @@ void setup(){
 }
   
 void loop(){
+  
+  
+//Sprawdza stan kontraktonu:
+if (digitalRead(magnetPin)==0 && firstTime==1 ) //Jesli drzwi zostaly otwarte 
+{
+ Serial.println("Drzwi otwarte!");
+  if (statusUzbrojenia==1) //W stanie uzbrojenia, wlaczAlarm:
+  {
+ digitalWrite(buzzer,HIGH);
+ Serial.println("Alarm activated!"); 
+ buzzer_time=millis()+1000;
+  }
+                         // Niezaleznie od stanu, wyslij do plytki 2 i zapisz na karcie SD:
+ //+ logowanie do karty SD
+   Serial.println("Information sent to module 2!"); 
+  Wire.beginTransmission(0x60);   
+  Wire.write(magnetPin);                
+  Wire.endTransmission();
+  firstTime=0;  
+}
+
+if (digitalRead(magnetPin)==1)
+{
+ firstTime=1; 
+ //Serial.println("Magnet dezactivated!"); 
+}
+  
   
 // Sprawdza status alarmu i sygnalizuje go diodami:
   if (statusUzbrojenia==0)
@@ -332,7 +381,6 @@ char customKey = customKeypad.getKey();
  }
  else
  lcd.print("Rozbrojony");
- 
   lcdFade=0;
   }
   
