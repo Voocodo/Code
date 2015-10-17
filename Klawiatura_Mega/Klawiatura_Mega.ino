@@ -6,19 +6,31 @@
 27.09 dodanie alarmu
 */
 
-//------------------Libraries------------------//
+//------------------Biblioteki------------------//
 #include <Keypad.h>
 #include <LiquidCrystal.h>
 #include <Wire.h>
+#include <SPI.h>
+#include <MFRC522.h>
 //---------------------------------------------//
 
 
-//-------------------Led Pins-------------------//
+//-------------------Piny-------------------//
 int greenLed = 2;
 int redLed = 3;
 int buzzer = 4;
 //---------------------------------------------//
 
+//-------------------RFID-------------------//
+#define RST_PIN		48		
+#define SS_PIN		49		
+byte readCard[4];
+byte karta1[4] = {96,250,228,69};
+byte karta2[4] = {65,95,13,36};
+byte checkKarta1=0;
+byte checkKarta2=0;
+MFRC522 mfrc522(SS_PIN, RST_PIN);
+//---------------------------------------------//
 
 //---------------------LCD----------------------//
 LiquidCrystal lcd(30, 31, 32, 33, 34, 35); 
@@ -60,8 +72,8 @@ unsigned long aktualnyCzas =0;
 /////////////////////////////////////////////
 
 //Relay
-int relay1 = 52;
-int relay2 = 53;
+int relay1 = 40;
+int relay2 = 41;
 unsigned long relay1_time=0;
 unsigned long relay2_time=0;
 
@@ -164,6 +176,12 @@ void enterPinMode() //Sprawdza poprawność kodu PIN
     
     if (pozycja == 4 && proba == 4) //Pin OK
     {
+      zmienStatusUzbrojenia();
+  }
+}
+
+void zmienStatusUzbrojenia()
+{
       enterPinModeActive=0;
       statusUzbrojenia=!statusUzbrojenia;
     
@@ -186,7 +204,7 @@ void enterPinMode() //Sprawdza poprawność kodu PIN
          if (statusUzbrojenia==1)
        {
          lcd.clear();
-         lcd.write("Alarm aktywny!"); 
+         lcd.write("Alarm aktywowany!"); 
          digitalWrite(buzzer,HIGH);
          
          buzzer_time=millis()+1000; // Włacza buzzer na sekundę oraz zostawia ekran na 3 sekundy
@@ -198,7 +216,7 @@ void enterPinMode() //Sprawdza poprawność kodu PIN
   Wire.endTransmission();
          
        }
-  }
+  
 }
 
 ////////////////////////////////////////////
@@ -217,29 +235,30 @@ void setup(){
   pinMode(magnetPin,INPUT);
   pinMode(pirSensor,INPUT);
   
-  
-  
   digitalWrite(relay1, HIGH);
   digitalWrite(relay2, HIGH);
   digitalWrite(redLed,HIGH);
   digitalWrite(greenLed,HIGH);
   digitalWrite(buzzer,LOW);
+  
+   SPI.begin();			// Inicjalizacja SPI
+   mfrc522.PCD_Init();		// Inicjalizacja MFRC522
+   Serial.println(F("Czytnik RFID gotowy."));
 }
   
-void loop(){
-  
-  
+void loop()
+{  
 //Sprawdza stan kontraktonu:
 if (digitalRead(magnetPin)==0 && firstTime==1 ) //Jesli drzwi zostaly otwarte 
 {
  Serial.println("Drzwi otwarte!");
   if (statusUzbrojenia==1) //W stanie uzbrojenia, wlaczAlarm:
   {
- digitalWrite(buzzer,HIGH);
- Serial.println("Alarm activated!"); 
- buzzer_time=millis()+1000;
+   digitalWrite(buzzer,HIGH);
+   Serial.println("Alarm activated!"); 
+   buzzer_time=millis()+1000;
   }
-                         // Niezaleznie od stanu, wyslij do plytki 2 i zapisz na karcie SD:
+ // Niezaleznie od stanu, wyslij do plytki 2 i zapisz na karcie SD:
  //+ logowanie do karty SD
   Serial.println("Information sent to module 2!"); 
   Wire.beginTransmission(0x60);   
@@ -292,9 +311,10 @@ if (digitalRead(magnetPin)==1)
    digitalWrite(greenLed,HIGH); 
   }
   
+ lookForRfidCard(); //Sprawdz, czy przylozono karte RFID:
   
- //Sprawdź czy nacisnieto nowy klawisz:  
-char customKey = customKeypad.getKey();
+  
+char customKey = customKeypad.getKey(); //Sprawdź czy nacisnieto nowy klawisz: 
    
 //Jesli tak, zapikaj i wypisz go na LCD:   
   if (customKey)
@@ -323,10 +343,11 @@ char customKey = customKeypad.getKey();
    break;
    
    case '#':
-   lcd.clear();
-  lcd.print("Ekran startowy.");
-  lcd.setCursor(5,1);
-  lcd.print("Witaj!");
+//   lcd.clear();
+//  lcd.print("Ekran startowy.");
+//  lcd.setCursor(5,1);
+//  lcd.print("Witaj!");
+wyswietlEkranStartowy();
   enterPinModeActive=0;
    break;
    
@@ -369,7 +390,6 @@ char customKey = customKeypad.getKey();
       lcd.setCursor(0,2);
       lcd.print("Cisn: ");
      lcd.print(cisn);
-     
      lcdFadeTime=millis()+3000;
      lcdFade=1;
      
@@ -399,10 +419,87 @@ char customKey = customKeypad.getKey();
   
   if (aktualnyCzas>=lcdFadeTime && lcdFade==1 && enterPinModeActive==0)
   {
-  lcd.clear();
-  lcd.print("Ekran startowy.");
-  lcd.setCursor(5,1);
-  lcd.print("Witaj!");
+    wyswietlEkranStartowy();
+  
+  }
+  
+    if (aktualnyCzas>=i2c_time)
+  {  
+  //Odczytanie informacji z I2C:
+   czytajI2C(); 
+   i2c_time=millis()+15000;
+  }
+ 
+}
+
+void lookForRfidCard ()
+{
+ 	// Szukaj karty RFID:
+	if ( ! mfrc522.PICC_IsNewCardPresent()) {
+		return;
+}
+
+	// Wybierz jedna z kart:
+	if ( ! mfrc522.PICC_ReadCardSerial()) {
+		return;
+	}
+
+  //Zczytaj kod UID (4 bajty):
+  for (int i = 0; i < 4; i++) 
+  {  
+    readCard[i] = mfrc522.uid.uidByte[i];
+    Serial.print(readCard[i]);
+    Serial.print ("  ");
+    }
+   Serial.println(""); 
+   mfrc522.PICC_HaltA(); // Koniec czytania karty
+ 
+   checkKarta1=0;
+   checkKarta2=0;
+  for (int i = 0; i < 4; i++) 
+  {  
+     if (readCard[i] == karta1[i])
+     {
+     checkKarta1++;  
+     }
+   
+     if (readCard[i] == karta2[i])
+     {
+     checkKarta2++;  
+     }
+  }
+if (checkKarta1==4)
+{
+  zmienStatusUzbrojenia();
+  Serial.println("Otwieram! Karta 1.");
+  Serial.println("-------------------------------------");
+  Wire.beginTransmission(0x60);   
+  Wire.write(9);                
+  Wire.endTransmission(); 
+}
+
+else if (checkKarta2==4)
+{
+  zmienStatusUzbrojenia();
+  Serial.println("Otwieram! Karta 2.");
+  Serial.println("-------------------------------------");
+   Wire.beginTransmission(0x60);   
+  Wire.write(11);                
+  Wire.endTransmission(); 
+}
+else 
+Serial.println("Niepoprawna karta!");
+ Wire.beginTransmission(0x60);   
+ Wire.write(12);                
+ Wire.endTransmission();  
+}
+
+void wyswietlEkranStartowy ()
+{
+lcd.clear();
+  lcd.print("System monitorowania.");
+  //lcd.setCursor(5,1);
+  //lcd.print("Witaj!");
  lcd.setCursor(0,2);
  lcd.print("Status alarmu:");
  lcd.setCursor(0,3);
@@ -411,18 +508,6 @@ char customKey = customKeypad.getKey();
  }
  else
  lcd.print("Rozbrojony");
-  lcdFade=0;
-  }
+ lcdFade=0;
   
-    if (aktualnyCzas>=i2c_time)
-  {  
-  //Odczytanie informacji z I2C:
-   czytajI2C(); 
-     i2c_time=millis()+3000;
-  }
-  
-
-  
-
 }
-

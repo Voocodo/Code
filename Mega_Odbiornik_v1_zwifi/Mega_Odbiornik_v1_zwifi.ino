@@ -4,93 +4,92 @@
 //20.09 dodanie cisnienia
 //21.09 Dodanie I2C
 //25.09. RTC
+//10.10 mieszanie
 
-
-#include <VirtualWire.h>
+#include <VirtualWire.h> //Biblioteka do komunikacji z I2C
 #include <SPI.h>
 #include <Ethernet.h>
 #include <SD.h>
 #include <Wire.h>
+
 //RTC:
 #include <virtuabotixRTC.h>       
 virtuabotixRTC myRTC(5, 6, 7);
 
+//433 MHZ:
 const int led_pin = 8;
 const int receive_pin = 22;
 const int transmit_en_pin = 3;
 
-
 //I2C:
 #define SLAVE_ADDRESS 0x60
 byte daneI2C[6];
-byte alarmInfo=0;
+int alarmInfo=0;
 byte receiveFlag=0;
 
+//Inne:
 int zmienna[4];
 float temp =0;
 float wilg =0;
 float cisn =0;
 int count=0;
 char c;
-//Wifi:////////////////////
+
+//Wifi:
 
 byte mac[] = {0xDE, 0xAD, 0xCE, 0xEF, 0xFE, 0xED};
 IPAddress ip(192, 168, 88, 88);
-
-// Initialize the Ethernet server library
-// with the IP address and port you want to use
-// (port 80 is default for HTTP):
 EthernetServer server(80);
-////////////////////////////
+
 //SD:
 File webFile;
 File myFile;
 File alarmFile;
-
 unsigned long datalog_time=0;
 int datalog_count =0;
 
 
 
+
 void setup()
 {
-    Serial.begin(9600);	// Debugging only
+    Serial.begin(9600);
+    
     //I2C:
     Wire.begin(SLAVE_ADDRESS);
     Wire.onReceive(receiveEvent);
     Wire.onRequest(requestEvent);
   
+    //433 MHZ:
     pinMode(13,OUTPUT);
     pinMode(receive_pin,INPUT);
-  
-    // Initialise the IO and ISR
-    //vw_set_tx_pin(transmit_pin);
     vw_set_rx_pin(receive_pin);
     vw_set_ptt_pin(transmit_en_pin);
     vw_set_ptt_inverted(true); // Required for DR3100
     vw_setup(2000);	 // Bits per sec
     vw_rx_start();       // Start the receiver PLL running
     
-    ////Wifi://////////////
-    
-  // start the Ethernet connection and the server:
-  Ethernet.begin(mac, ip);
-  server.begin();
-  Serial.print("server is at ");
-  Serial.println(Ethernet.localIP());
+    //Wifi:
+    Ethernet.begin(mac, ip);
+    server.begin();
+    Serial.print("server is at ");
+    Serial.println(Ethernet.localIP());
   
-  ////////////////////////////
-  //SD:
-   Serial.println("Initializing SD card...");
-    if (!SD.begin(4)) {
-        Serial.println("ERROR - SD card initialization failed!");
-        return;    // init failed
-    }
-    Serial.println("SUCCESS - SD card initialized.");
-    // check for index.htm file
+
+    //SD:
+     Serial.println("Inicjalizacja karty SD:");
+    
+    if (!SD.begin(4)) 
+    {
+        Serial.println("Błąd karty SD");
+        return;
+      }
+    Serial.println("Sukces - karta SD zainicjalizowana");
+    
+    //Znajdz plik index.htm:
     if (!SD.exists("index.htm")) {
-        Serial.println("ERROR - Can't find index.htm file!");
-        return;  // can't find index file
+        Serial.println("Blad - brak pliku index.htm!");
+        return;
     }
     Serial.println("SUCCESS - Found index.htm file.");
     
@@ -101,17 +100,15 @@ void setup()
     Serial.println("SUCCESS - Found datalog.txt file.");
   
   
-  //RTC:
+  //RTC: Ustawianie aktualmego czasu dla RTC
   //myRTC.setDS1302Time(00, 10, 13, 5, 25, 9, 2015);
   
-
 }
 
 void loop()
-
-
 {
-
+  
+//Aktualizacja czasu RTC:
 myRTC.updateTime();     
 //  Serial.print("Current Date / Time: ");                                                                 //| 
 //  Serial.print(myRTC.dayofmonth);                                                                        //| 
@@ -151,11 +148,6 @@ myRTC.updateTime();
  for (int i = 0; i < 5; i++)
    {
      zmienna[i] = word(buf[i*2+1], buf[i*2]);
-//     Serial.print("numbers[");
-//     Serial.print(i, DEC);
-//     Serial.print("]=");
-//     Serial.print(zmienna[i], DEC);
-//     Serial.print("  ");
    }
     Serial.println();
     digitalWrite(led_pin, LOW);
@@ -176,7 +168,7 @@ myRTC.updateTime();
     Serial.println(count);
     Serial.println("---------------------------------"); 
     
-    //I2C:
+    //I2C: Nadawanie danych I2C
   daneI2C[0]=lowByte(zmienna[2]);
   daneI2C[1]=highByte(zmienna[2]);
   daneI2C[2]=lowByte(zmienna[0]);
@@ -200,13 +192,11 @@ myRTC.updateTime();
       myFile.print("/");                                                                                     //| 
       myFile.print(myRTC.year);                                                                              //| 
       myFile.print(",");
-      
       myFile.print(myRTC.hours);                                                                             //| 
       myFile.print(":");                                                                                     //| 
       myFile.print(myRTC.minutes);                                                                           //| 
       myFile.print(":");                                                                                     //| 
       myFile.print(myRTC.seconds);
-      
       myFile.print(",");
       myFile.print(millis()/1000);
       myFile.print(",");
@@ -216,18 +206,19 @@ myRTC.updateTime();
       myFile.print(",");
       myFile.println(cisn);
       myFile.close();
-      datalog_time=millis()+10000; //Kolejny wpis za 10 sekund
+      datalog_time=millis()+30000; //Kolejny wpis za 30 sekund
       }
     
     }
     
     
-    ////Wifi:////////
-     // listen for incoming clients
+    ////Wifi://
+    //Nasluchuj informacji od klienta:
   EthernetClient client = server.available();
+  
+  //Jesli pojawia sie klient:
   if (client) {
-    Serial.println("new client");
-    // an http request ends with a blank line
+    Serial.println("Nowy klient");
     boolean currentLineIsBlank = true;
     while (client.connected()) {
       if (client.available()) {
@@ -246,8 +237,12 @@ myRTC.updateTime();
           client.println("Refresh: 5");  // refresh the page automatically every 5 sec
           client.println();
           client.println("<!DOCTYPE HTML>");
-          client.println("<meta charset='ISO-8859-1'>");
           client.println("<html>");
+//          client.println("<meta charset='ISO-8859-1'>");
+//client.println("<meta http-equiv='Content-type' charset=utf-8/>");
+          
+          
+          //Wgranie arkusza CSS:
 
                     webFile = SD.open("index.htm");        // open web page file
                     if (webFile) {
@@ -256,22 +251,28 @@ myRTC.updateTime();
                         }
                         webFile.close();
                     }
-                    
-          
-          
-          // output the value of each analog input pin
-         // for (int analogChannel = 0; analogChannel < 6; analogChannel++) {
-           // int sensorReading = analogRead(analogChannel);
-           
-            client.print("<td><p>Temperatura:</p></td><td>");
-            client.println(temp);
-            client.println("</td>");
-            client.print("</tr><tr><td><p>Wilgotnosc:</p></td><td>");
-            client.println(wilg);
-            client.println("</td></tr>");
-            client.println("<tr><td><p>Cisnienie:</p></td><td>");
-            client.println(cisn);
-            client.println("</td></tr></table></body></html>");
+
+           client.print("<body><h1>System monitorujacy.<br><br>");
+           client.print("Czas:  ");
+            client.println(myRTC.hours);
+            client.println(":");
+            client.println(myRTC.minutes);
+            client.println(":");
+            client.println(myRTC.seconds);
+            client.print("</h1>");
+            client.print("<table text-align='left'><tr><td><p>   Temperatura:</p></td><td><h1>");
+            client.print(temp);
+            client.print("</h1></td></tr>");
+            client.print("<tr><td><p> Wilgotnosc:</p></td><td><h1>");
+            client.print(wilg);
+            client.print("</h1></td></tr>");
+            client.print("<tr><td><p>Cisnienie:</p></td><td><h1>");
+            client.print(cisn);
+            client.print("</h1></td></tr></table>");
+            client.print("<br>Last alarm info:");
+            client.print(alarmInfo);
+            client.print("</body></html>");
+
 
           break;
         }
@@ -292,6 +293,7 @@ myRTC.updateTime();
     Serial.println("client disconnected");
   }
   
+
   
   //I2C receive
   
@@ -381,4 +383,7 @@ void receiveEvent(int bytes)
    receiveFlag=1;
    }
 }
+
+
+
 
