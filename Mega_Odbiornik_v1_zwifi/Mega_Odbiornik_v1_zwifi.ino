@@ -33,7 +33,6 @@ float temp =0;
 float wilg =0;
 float cisn =0;
 int count=0;
-int wirelessMotion =0;
 char c;
 
 //Wifi:
@@ -165,7 +164,7 @@ myRTC.updateTime();
     Serial.println(wilg);
     Serial.print("Cisnienie: ");
     Serial.println(cisn);
-    Serial.print("Count:");
+    Serial.print("Cout:");
     Serial.println(count);
     Serial.println("---------------------------------"); 
     
@@ -344,13 +343,6 @@ myRTC.updateTime();
       {
         
         alarmFile.print("Motion in room 1 detected!");
-       // alarmFile.print(",");
-      }
-      
-      if (alarmInfo ==12)
-        {
-        
-        alarmFile.print("RFID card used!");
        // alarmFile.print(",");
       }
      
