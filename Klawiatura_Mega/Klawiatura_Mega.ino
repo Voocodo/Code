@@ -18,7 +18,7 @@
 //-------------------Piny-------------------//
 int greenLed = 2;
 int redLed = 3;
-int buzzer = 4;
+int buzzer = 12;
 //---------------------------------------------//
 
 //-------------------RFID-------------------//
@@ -72,13 +72,13 @@ unsigned long aktualnyCzas =0;
 /////////////////////////////////////////////
 
 //Relay
-int relay1 = 40;
-int relay2 = 41;
+int relay1 = 39;
+int relay2 = 38;
 unsigned long relay1_time=0;
 unsigned long relay2_time=0;
 
 //Kontrakton
-int magnetPin = 18; //for interrupt
+int magnetPin = 8; //for interrupt
 boolean firstTime=0;
 
 //PIR:

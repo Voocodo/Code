@@ -59,7 +59,7 @@ void setup() {
   // DHT:
   dht.begin();
   
-  //Rfid:
+  //433:
   vw_set_ptt_inverted(true);
   vw_set_tx_pin(transmit_pin);
   vw_set_ptt_pin(transmit_en_pin);
