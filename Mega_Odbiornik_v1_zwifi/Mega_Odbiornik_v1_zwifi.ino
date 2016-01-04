@@ -6,6 +6,7 @@
 //25.09. RTC
 //10.10 mieszanie
 
+
 #include <VirtualWire.h> //Biblioteka do komunikacji z I2C
 #include <SPI.h>
 #include <Ethernet.h>
@@ -354,41 +355,41 @@ void loop()
     if (alarmInfo == 0) // Save event type on sd file
     {
 
-      alarmFile.print("Wrong PIN");
+      alarmFile.println("Wrong PIN");
       // alarmFile.print(",");
     }
 
     if (alarmInfo == 1)
     {
 
-      alarmFile.print("Correct PIN. Alarm deactivated.");
+      alarmFile.println("Correct PIN. Alarm deactivated.");
       //   alarmFile.print(",");
     }
 
     if (alarmInfo == 2)
     {
-      alarmFile.print("Correct PIN. Alarm activated.");
+      alarmFile.println("Correct PIN. Alarm activated.");
       // alarmFile.print(",");
     }
 
     if (alarmInfo == 7)
     {
 
-      alarmFile.print("Motion in room 1 detected!");
+      alarmFile.println("Motion in room 1 detected!");
       // alarmFile.print(",");
     }
 
     if (alarmInfo == 12)
     {
 
-      alarmFile.print("RFID card used!");
+      alarmFile.println("RFID card used!");
       // alarmFile.print(",");
     }
 
     if (alarmInfo == 18)
     {
 
-      alarmFile.print("Door opened!");
+      alarmFile.println("Door opened!");
       // alarmFile.print(",");
     }
 

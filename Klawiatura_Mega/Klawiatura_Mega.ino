@@ -4,6 +4,7 @@
 11.09.2015 kod pin dziala
 25.09 
 27.09 dodanie alarmu
+//3.01.2016 Przelutowanie klawiatury
 */
 
 //------------------Biblioteki------------------//
@@ -53,8 +54,8 @@ char hexaKeys[ROWS][COLS] = {
   {'7','8','9','C'},
   {'*','0','#','D'}
 };
-byte rowPins[ROWS] = {22, 23, 24, 25}; //connect to the row pinouts of the keypad
-byte colPins[COLS] = {26, 27, 28, 29}; //connect to the column pinouts of the keypad
+byte rowPins[ROWS] = {40, 41, 42, 43}; //connect to the row pinouts of the keypad
+byte colPins[COLS] = {44, 45, 46, 47}; //connect to the column pinouts of the keypad
 //initialize an instance of class NewKeypad
 Keypad customKeypad = Keypad( makeKeymap(hexaKeys), rowPins, colPins, ROWS, COLS); 
 
