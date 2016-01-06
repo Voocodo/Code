@@ -5,7 +5,7 @@
 //21.09 Dodanie I2C
 //25.09. RTC
 //10.10 mieszanie
-
+// 5.01.16 naprawa
 
 #include <VirtualWire.h> //Biblioteka do komunikacji z I2C
 #include <SPI.h>
@@ -15,9 +15,10 @@
 
 //RTC:
 #include <virtuabotixRTC.h>
-virtuabotixRTC myRTC(5, 4, 3);
-int rtcGnd=6;
-int rtcVcc=7;
+//virtuabotixRTC myRTC(5, 4, 3);
+virtuabotixRTC myRTC(A2, A1, A0);
+int rtcGnd=A3;
+int rtcVcc=A4;
 
 //433 MHZ:
 //const int led_pin = 8;
@@ -57,15 +58,25 @@ File webFile;
 File myFile;
 File alarmFile;
 unsigned long datalog_time = 0;
-int datalog_count = 0;
+int datalogNumber = 0;
+#define SS_SD_CARD   4
+#define SS_ETHERNET 10
 
+//Czas
 
-
+int t_dzien = 0;
+int t_miesiac = 0;
+int t_rok = 0;
+int t_godzina =0;
+int t_minuta =0;
+int t_sekunda = 0;
 
 void setup()
 {
   Serial.begin(9600);
-
+//For SPI:
+pinMode(53,OUTPUT);
+digitalWrite(53, HIGH);
 //RTC:
 pinMode(rtcGnd,OUTPUT);
 pinMode(rtcVcc,OUTPUT);
@@ -141,8 +152,8 @@ digitalWrite(rtcVcc,HIGH);
 void loop()
 {
 
-  //Aktualizacja czasu RTC:
-  myRTC.updateTime();
+
+  
   //  Serial.print("Current Date / Time: ");                                                                 //|
   //  Serial.print(myRTC.dayofmonth);                                                                        //|
   //  Serial.print("/");                                                                                     //|
@@ -212,41 +223,62 @@ void loop()
 
     //Zapisz temp do karty SD
 
-    if (datalog_time < millis())
+    // tu byl zapis do sd
+  }
+  // nowa pozycja zapisu do sd
+    //Aktualizacja czasu RTC:
+myRTC.updateTime();  
+ 
+ t_dzien = myRTC.dayofmonth ;
+ t_miesiac = myRTC.month ;
+ t_rok = myRTC.year;
+ t_godzina = myRTC.hours;
+ t_minuta = myRTC.minutes;
+ t_sekunda = myRTC.seconds;
+ 
+  if (datalog_time < millis())
     {
-      Serial.println("Logowanie do karty SD");
-      datalog_count = datalog_count + 1;
+      Serial.print("Logowanie danych do karty SD. Datalog count: ");
+      Serial.println(datalogNumber);
+      datalogNumber = datalogNumber + 1;
+      digitalWrite(SS_SD_CARD, LOW);
       myFile = SD.open("datalog.txt", FILE_WRITE);
-      myFile.print(datalog_count);
-      myFile.print(",");
-      myFile.print(myRTC.dayofmonth);                                                                        //|
+      
+      if (myFile) {
+      myFile.println(" ");
+      myFile.print(datalogNumber);
+      myFile.print(", ");
+      myFile.print(t_dzien);                                                                        //|
       myFile.print("/");                                                                                     //|
-      myFile.print(myRTC.month);                                                                             //|
+      myFile.print(t_miesiac);                                                                             //|
       myFile.print("/");                                                                                     //|
-      myFile.print(myRTC.year);                                                                              //|
-      myFile.print(",");
-      myFile.print(myRTC.hours);                                                                             //|
+      myFile.print(t_rok);                                                                              //|
+      myFile.print(", ");
+      myFile.print(t_godzina);                                                                             //|
       myFile.print(":");                                                                                     //|
-      myFile.print(myRTC.minutes);                                                                           //|
+      myFile.print(t_minuta);                                                                           //|
       myFile.print(":");                                                                                     //|
-      myFile.print(myRTC.seconds);
-      myFile.print(",");
-      myFile.print(millis() / 1000);
-      myFile.print(",");
+      myFile.print(t_sekunda);
+      myFile.print(",     ");
       myFile.print(temp);
-      myFile.print(",");
+      myFile.print(", ");
       myFile.print(wilg);
-      myFile.print(",");
-      myFile.println(cisn);
+      myFile.print(", ");
+      myFile.print(cisn);
       myFile.close();
-      datalog_time = millis() + 30000; //Kolejny wpis za 30 sekund
+      digitalWrite(SS_SD_CARD, HIGH);
+      }
+      else {
+      Serial.println("error opening datalog.txt");
+      }
+      datalog_time = millis() + 30000; //Kolejny wpis za 30 sekundy
     }
 
-  }
 
 
   ////Wifi://
   //Nasluchuj informacji od klienta:
+   digitalWrite(SS_ETHERNET, LOW);
   EthernetClient client = server.available();
 
   //Jesli pojawia sie klient:
@@ -271,21 +303,29 @@ void loop()
           client.println();
           client.println("<!DOCTYPE HTML>");
           client.println("<html>");
+          client.println("<head>");
+         client.println("<meta http-equiv='Content-type' content='text/html;charset=ISO-8859-2'/>");
+          client.println("<title>Strona pomiarowa</title>");
+          client.println("<style>");
+          client.println("body{	background:black;color:white;font-family: Helvetica;}");
+          client.println("p{ font-size: 20px; color:yellow; text-align:center;}");
+          client.println("</style></head>");
           //          client.println("<meta charset='ISO-8859-1'>");
           //client.println("<meta http-equiv='Content-type' charset=utf-8/>");
 
 
           //Wgranie arkusza CSS:
 
-          webFile = SD.open("index.htm");        // open web page file
-          if (webFile) {
-            while (webFile.available()) {
-              client.write(webFile.read()); // send web page to client
-            }
-            webFile.close();
-          }
-
-          client.print("<body><h1>System monitorujacy.<br><br>");
+//          webFile = SD.open("index.htm");        // open web page file
+//          if (webFile) {
+//            while (webFile.available()) {
+//              client.write(webFile.read()); // send web page to client
+//            }
+//            webFile.close();
+//          }
+           
+client.println("<body>");
+          client.print("<h1>System monitorujacy.<br><br>");
           client.print("Czas:  ");
           client.println(myRTC.hours);
           client.println(":");
@@ -325,14 +365,14 @@ void loop()
     client.stop();
     Serial.println("client disconnected");
   }
-
+ digitalWrite(SS_ETHERNET, HIGH);
 
 
   //I2C receive
 
   if (receiveFlag == 1) // If there is new event:
   {
-
+digitalWrite(SS_SD_CARD, LOW);
     alarmFile = SD.open("alarm.txt", FILE_WRITE); //Save time on SD file...
 
     alarmFile.println("");
@@ -397,6 +437,7 @@ void loop()
 
 
     alarmFile.close();
+     digitalWrite(SS_SD_CARD, HIGH);
 
 
     Serial.print("alarmInfo: ");
